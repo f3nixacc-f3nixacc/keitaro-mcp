@@ -1,6 +1,6 @@
 [project]
 name = "keitaro-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "MCP server for Keitaro Tracker Admin API — campaign management, reports, analytics"
 requires-python = ">=3.11"
 license = {text = "MIT"}
@@ -24,6 +24,7 @@ dev = ["pytest"]
 
 [project.urls]
 Repository = "https://github.com/f3nixacc-f3nixacc/keitaro-mcp"
+Changelog = "https://github.com/f3nixacc-f3nixacc/keitaro-mcp/releases"
 
 [build-system]
 requires = ["setuptools>=68.0"]
