@@ -23,10 +23,14 @@ from keitaro_mcp.registry import InstanceRegistry
 
 registry = InstanceRegistry()
 app = Server("keitaro")
+write_enabled = False
 
 
 def _init():
     """Load instances from config file or env vars."""
+    global write_enabled
+    write_enabled = os.environ.get("KEITARO_ALLOW_WRITE", "").lower() in ("true", "1", "yes")
+
     # curl is required for HTTP requests (bypasses Cloudflare TLS fingerprinting)
     if not shutil.which("curl"):
         print(
@@ -67,6 +71,19 @@ def _ok(data) -> list[TextContent]:
 def _err(msg: str) -> list[TextContent]:
     return [TextContent(type="text", text=json.dumps({"error": msg}))]
 
+
+# Write tools that require KEITARO_ALLOW_WRITE=true
+_WRITE_TOOLS = {
+    "keitaro_create_campaign", "keitaro_update_campaign", "keitaro_delete_campaign",
+    "keitaro_clone_campaign", "keitaro_toggle_campaign",
+    "keitaro_create_offer", "keitaro_update_offer", "keitaro_delete_offer",
+    "keitaro_create_stream", "keitaro_update_stream", "keitaro_delete_stream",
+    "keitaro_toggle_stream",
+    "keitaro_create_landing_page", "keitaro_update_landing_page", "keitaro_delete_landing_page",
+    "keitaro_create_traffic_source",
+    "keitaro_create_affiliate_network",
+    "keitaro_check_domain",
+}
 
 # Shared parameter for multi-instance support
 _INSTANCE_PARAM = {
@@ -927,6 +944,15 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 if arguments.get("sort"):
                     body["sort"] = arguments["sort"]
                 return _ok(client.get_conversions(body))
+
+            # === Write Operations (guarded by KEITARO_ALLOW_WRITE) ===
+            case name if name in _WRITE_TOOLS and not write_enabled:
+                return _err(
+                    f"Write operations are disabled. "
+                    f"Set KEITARO_ALLOW_WRITE=true in your MCP server config to enable "
+                    f"create/update/delete operations. "
+                    f"Tool '{name}' was blocked."
+                )
 
             # === CRUD: Campaigns ===
             case "keitaro_create_campaign":
