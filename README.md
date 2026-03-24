@@ -14,16 +14,16 @@ MCP server for [Keitaro Tracker](https://keitaro.io) Admin API. Provides **37 to
 ### Step 1: Clone the repository
 
 ```bash
-git clone https://github.com/f3nixacc-f3nixacc/keitaro-mcp.git
+git clone https://github.com/KeitaroManager/keitaro-mcp.git
 ```
 
 Choose where to clone. It can be anywhere — your home directory, a tools folder, etc:
 
 ```bash
 # Example locations:
-git clone https://github.com/f3nixacc-f3nixacc/keitaro-mcp.git ~/keitaro-mcp
-git clone https://github.com/f3nixacc-f3nixacc/keitaro-mcp.git ~/tools/keitaro-mcp
-git clone https://github.com/f3nixacc-f3nixacc/keitaro-mcp.git /opt/keitaro-mcp
+git clone https://github.com/KeitaroManager/keitaro-mcp.git ~/keitaro-mcp
+git clone https://github.com/KeitaroManager/keitaro-mcp.git ~/tools/keitaro-mcp
+git clone https://github.com/KeitaroManager/keitaro-mcp.git /opt/keitaro-mcp
 ```
 
 ### Step 2: Install the MCP server
@@ -57,8 +57,9 @@ Restart Claude Code. The `keitaro_*` tools are now available. Try:
 ```
 You: "List my Keitaro campaigns"
 You: "Show ROI by campaign for last 7 days"
-You: "Create a campaign named Test"
 ```
+
+> **Note:** By default, only **read** operations work. Create/update/delete are disabled for safety. See [Write Protection](#write-protection) below to enable them.
 
 ### Full Example (copy-paste ready)
 
@@ -104,6 +105,57 @@ claude mcp remove keitaro -s project
 # Or remove from user scope
 claude mcp remove keitaro -s user
 ```
+
+## Write Protection
+
+**By default, all write operations are DISABLED.** Only read and analytics tools work (list, get, reports, clicks, conversions).
+
+This is a safety measure — when you share this MCP server with your team, nobody can accidentally create, update, or delete campaigns, offers, or streams until write access is explicitly enabled.
+
+### Blocked operations (when disabled)
+
+All 18 write tools return an error message explaining how to enable them:
+- `keitaro_create_*`, `keitaro_update_*`, `keitaro_delete_*`
+- `keitaro_clone_*`, `keitaro_toggle_*`
+- `keitaro_check_domain`
+
+### How to enable write operations
+
+Add `KEITARO_ALLOW_WRITE=true` to your MCP config:
+
+```bash
+claude mcp add keitaro -s project \
+  -e KEITARO_URL=https://your-tracker.example.com \
+  -e KEITARO_API_KEY=your-api-key \
+  -e KEITARO_ALLOW_WRITE=true \
+  -- uv --directory /absolute/path/to/keitaro-mcp run python -m keitaro_mcp
+```
+
+Or edit your `.mcp.json` directly and add the env var:
+
+```json
+{
+  "mcpServers": {
+    "keitaro": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["--directory", "/path/to/keitaro-mcp", "run", "python", "-m", "keitaro_mcp"],
+      "env": {
+        "KEITARO_URL": "https://your-tracker.example.com",
+        "KEITARO_API_KEY": "your-api-key",
+        "KEITARO_ALLOW_WRITE": "true"
+      }
+    }
+  }
+}
+```
+
+### Accepted values
+
+| Value | Write enabled |
+|-------|--------------|
+| `true`, `1`, `yes` | Yes |
+| `false`, `0`, `no`, empty, not set | **No** (default) |
 
 ## Multiple Keitaro Instances
 
